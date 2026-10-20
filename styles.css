@@ -1,0 +1,1168 @@
+:root {
+  color-scheme: light;
+  --bg-color: #f2f5fa;
+  --card-bg: #ffffff;
+  --card-border: #dbe3ef;
+  --accent-blue: #2f6fed;
+  --gold: #b9820a;
+  --green: #1fa35a;
+  --red: #d63b2b;
+  --text-main: #1b2638;
+  --text-muted: #5d6c83;
+  --radius: 16px;
+  --shadow: 0 2px 8px rgba(27, 38, 56, 0.06);
+
+  /* Адаптивті өлшемдер: экранға қарай өздігінен өзгереді */
+  --page-pad: clamp(12px, 4vw, 24px);
+  --card-pad: clamp(14px, 3.5vw, 22px);
+  --gap: clamp(10px, 2.5vw, 16px);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: calc(var(--page-pad) + var(--safe-top)) var(--page-pad) calc(var(--page-pad) + var(--safe-bottom));
+  overflow-x: hidden;
+}
+
+img {
+  max-width: 100%;
+}
+
+.container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Header & Status Indicator */
+header {
+  text-align: center;
+  margin-bottom: clamp(16px, 4vw, 25px);
+  position: relative;
+}
+
+h1 {
+  font-size: clamp(1.4rem, 5.5vw, 1.8rem);
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-main);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.subtitle {
+  font-size: clamp(0.85rem, 2.8vw, 0.95rem);
+  color: var(--text-muted);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  margin-top: 10px;
+  border: 1px solid var(--card-border);
+  max-width: 100%;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background-color: var(--green);
+  box-shadow: 0 0 0 0 rgba(31, 163, 90, 0.7);
+  animation: pulse 1.6s infinite;
+}
+
+.pulse-dot.offline {
+  background-color: var(--red);
+  box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(31, 163, 90, 0.6); }
+  70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(31, 163, 90, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(31, 163, 90, 0); }
+}
+
+/* Banner */
+.banner {
+  background: rgba(31, 163, 90, 0.12);
+  border: 1px solid var(--green);
+  color: var(--green);
+  padding: 15px;
+  border-radius: var(--radius);
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 20px;
+  display: none;
+}
+
+/* Candidates List & Cards */
+.candidates-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.candidate-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+  padding: var(--card-pad);
+  padding-top: calc(var(--card-pad) + 4px);
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.candidate-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-color: var(--candidate-color, var(--accent-blue));
+}
+
+@media (hover: hover) {
+  .candidate-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-blue);
+  }
+}
+
+/* Avatar & Photos */
+.avatar {
+  width: clamp(52px, 14vw, 65px);
+  height: clamp(52px, 14vw, 65px);
+  border-radius: 50%;
+  background: rgba(27, 38, 56, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: clamp(1.05rem, 4vw, 1.3rem);
+  color: var(--candidate-color, var(--text-main));
+  border: 2px solid var(--candidate-color, var(--card-border));
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.candidate-info {
+  flex: 1 1 0;
+  min-width: 0; /* ұзын мәтін карточкадан шығып кетпеуі үшін */
+}
+
+.candidate-name {
+  font-size: clamp(1.05rem, 3.8vw, 1.2rem);
+  font-weight: 600;
+  margin-bottom: 4px;
+  overflow-wrap: anywhere;
+}
+
+.candidate-group {
+  font-size: 0.85rem;
+  color: var(--accent-blue);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.candidate-slogan {
+  font-size: clamp(0.82rem, 2.8vw, 0.9rem);
+  color: var(--text-muted);
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+.btn-vote {
+  background: var(--accent-blue);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  min-height: 44px; /* саусақпен басуға ыңғайлы */
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, filter 0.2s;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-vote:hover {
+  filter: brightness(1.1);
+}
+
+.btn-vote:disabled {
+  background: #dfe5ef;
+  color: #8b97ab;
+  cursor: not-allowed;
+}
+
+/* Results Page Specifics */
+.total-box {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: var(--card-pad);
+  text-align: center;
+  margin-bottom: clamp(16px, 4vw, 24px);
+}
+
+.total-title {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.total-count {
+  font-size: clamp(2.4rem, 11vw, 3.2rem);
+  font-weight: 800;
+  color: var(--gold);
+  margin: 5px 0;
+}
+
+.result-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: var(--card-pad);
+  margin-bottom: var(--gap);
+  overflow: hidden;
+  position: relative;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.result-candidate-info {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 2.5vw, 14px);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.result-candidate-info > div:last-child {
+  min-width: 0;
+}
+
+.result-candidate-info .candidate-name {
+  font-size: clamp(1rem, 4vw, 1.25rem) !important;
+}
+
+.result-candidate-info .avatar {
+  width: clamp(40px, 11vw, 50px);
+  height: clamp(40px, 11vw, 50px);
+  font-size: clamp(0.95rem, 3.5vw, 1.1rem);
+}
+
+.crown-icon {
+  font-size: clamp(1.15rem, 4vw, 1.5rem);
+  display: none;
+}
+
+.is-leader .crown-icon {
+  display: inline-block;
+}
+
+.is-leader {
+  border-color: var(--gold);
+  background: #fffbf0;
+  box-shadow: 0 0 0 1px var(--gold), 0 4px 14px rgba(185, 130, 10, 0.18);
+}
+
+.result-stats {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.vote-number {
+  font-size: clamp(1.7rem, 7vw, 2.2rem);
+  font-weight: 700;
+  color: var(--text-main);
+  display: inline-block;
+  transition: transform 0.2s;
+}
+
+.vote-number.pop {
+  animation: popAnim 0.3s ease-out;
+}
+
+@keyframes popAnim {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); color: var(--gold); }
+  100% { transform: scale(1); }
+}
+
+.vote-percentage {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.progress-bg {
+  height: 12px;
+  background: rgba(27, 38, 56, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 6px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Modals & Inputs */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(20, 30, 50, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--page-pad);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 10px 30px rgba(27, 38, 56, 0.18);
+  border-radius: var(--radius);
+  padding: clamp(18px, 5vw, 24px);
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+  transform: scale(0.8);
+  transition: transform 0.2s;
+}
+
+.modal-overlay.active .modal {
+  transform: scale(1);
+}
+
+.modal-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.modal-text {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--card-border);
+  color: var(--text-main);
+  padding: 10px 16px;
+  min-height: 44px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.btn-danger {
+  background: var(--red);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  min-height: 44px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.admin-input {
+  width: 100%;
+  padding: 12px;
+  min-height: 46px;
+  background: #f7f9fc;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  color: var(--text-main);
+  margin-bottom: 15px;
+  outline: none;
+  font-size: 16px; /* iOS-та жазу кезінде экран үлкейіп кетпеуі үшін */
+}
+
+.admin-input:focus {
+  border-color: var(--accent-blue);
+}
+
+/* Keyboard focus */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* Toast Notifications */
+.toast-container {
+  position: fixed;
+  bottom: calc(20px + var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 2 * var(--page-pad));
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--card-bg);
+  color: var(--text-main);
+  padding: 12px 24px;
+  border-radius: 30px;
+  border: 1px solid var(--card-border);
+  box-shadow: 0 4px 14px rgba(27, 38, 56, 0.15);
+  font-size: 0.9rem;
+  text-align: center;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast-error { border-color: var(--red); color: #b8281a; }
+.toast-success { border-color: var(--green); color: #12753a; }
+
+/* Navigation Hub (index.html) */
+.nav-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  margin-top: clamp(16px, 5vw, 30px);
+}
+
+.nav-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: clamp(16px, 4.5vw, 24px);
+  text-decoration: none;
+  color: var(--text-main);
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.nav-card:hover {
+  background: #eef3fd;
+  border-color: var(--accent-blue);
+}
+
+.nav-card-title {
+  font-size: clamp(1.05rem, 4vw, 1.2rem);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.nav-card-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* ============ Планшет және компьютер ============ */
+@media (min-width: 600px) {
+  .nav-cards {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .nav-card {
+    flex: 1 1 calc(50% - var(--gap) / 2);
+  }
+}
+
+/* ============ Үлкен экран / проектор (results.html) ============ */
+@media (min-width: 1100px) {
+  .container {
+    max-width: 1000px;
+  }
+  h1 {
+    font-size: 2.2rem;
+  }
+  .result-card {
+    padding: 26px 30px;
+  }
+  .result-candidate-info .avatar {
+    width: 64px;
+    height: 64px;
+    font-size: 1.3rem;
+  }
+  .result-candidate-info .candidate-name {
+    font-size: 1.5rem !important;
+  }
+  .vote-number {
+    font-size: 2.8rem;
+  }
+  .progress-bg {
+    height: 16px;
+    border-radius: 8px;
+  }
+  .progress-fill {
+    border-radius: 8px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .container {
+    max-width: 1300px;
+  }
+  h1 {
+    font-size: 2.8rem;
+  }
+  .total-count {
+    font-size: 4.5rem;
+  }
+  .result-candidate-info .candidate-name {
+    font-size: 1.9rem !important;
+  }
+  .vote-number {
+    font-size: 3.4rem;
+  }
+}
+
+/* ============ Телефон ============ */
+@media (max-width: 520px) {
+  /* Дауыс беру карточкасы: аватар + мәтін жоғарыда, түйме төменде */
+  .candidate-card {
+    flex-wrap: wrap;
+  }
+  .candidate-info {
+    flex: 1 1 calc(100% - 80px);
+  }
+  .candidate-card .btn-vote {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+  .modal-actions button {
+    width: 100%;
+  }
+
+  .toast {
+    padding: 12px 18px;
+  }
+}
+
+/* Өте тар экрандар (≤360px) */
+@media (max-width: 360px) {
+  .result-header {
+    flex-wrap: wrap;
+  }
+  .result-stats {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-left: auto;
+  }
+}
+
+/* Төмен биіктік / телефонды жатқызғанда */
+@media (max-height: 480px) and (orientation: landscape) {
+  .modal-overlay {
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+  header {
+    margin-bottom: 12px;
+  }
+}
+
+/* Қозғалысты азайтуды қалайтын пайдаланушылар үшін */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =====================================================
+   results.html: бір экранға сыятын режим (скролсыз)
+   Үміткер саны қанша болса да карточкалар биіктікті бөліп алады
+   ===================================================== */
+body.results-page {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: calc(clamp(8px, 2vh, 18px) + var(--safe-top));
+  padding-bottom: calc(clamp(8px, 2vh, 18px) + var(--safe-bottom));
+}
+
+.results-page .container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.results-page header {
+  flex: 0 0 auto;
+  margin-bottom: clamp(6px, 1.5vh, 14px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2px 12px;
+}
+
+.results-page h1 {
+  flex: 1 1 100%;
+  font-size: clamp(1.1rem, 4.5vh, 2.2rem);
+  margin-bottom: 0;
+}
+
+.results-page .subtitle {
+  font-size: clamp(0.7rem, 1.8vh, 0.9rem);
+}
+
+.results-page .status-badge {
+  margin-top: 0;
+  padding: 3px 10px;
+  font-size: clamp(0.7rem, 1.8vh, 0.85rem);
+}
+
+/* Жалпы дауыс блогы: бір қатарда */
+.results-page .total-box {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: clamp(6px, 1.5vh, 14px) clamp(12px, 3vw, 22px);
+  margin-bottom: clamp(6px, 1.5vh, 14px);
+}
+
+.results-page .total-title {
+  font-size: clamp(0.65rem, 1.8vh, 0.9rem);
+  text-align: left;
+}
+
+.results-page .total-count {
+  font-size: clamp(1.6rem, 6vh, 3.4rem);
+  line-height: 1;
+  margin: 0;
+}
+
+.results-page .total-box .btn-secondary {
+  margin-top: 0 !important;
+  min-height: 0;
+  padding: 5px 10px !important;
+  font-size: clamp(0.65rem, 1.6vh, 0.8rem) !important;
+}
+
+/* Карточкалар қатар тұрады, әрқайсысы тік баған */
+.results-page #results-container {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: center;
+  gap: clamp(6px, 1.6vw, 18px);
+}
+
+.results-page .result-card {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  max-width: 280px;
+  margin: 0;
+  padding: clamp(8px, 2cqh, 16px) clamp(6px, 1.5vw, 14px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: clamp(2px, 1cqh, 8px);
+  text-align: center;
+  container-type: size; /* ішкі өлшемдер карточка өлшеміне байланады (cqw/cqh) */
+}
+
+.results-page .crown-icon {
+  font-size: clamp(0.9rem, min(16cqw, 5cqh), 1.8rem);
+  line-height: 1;
+  visibility: hidden;
+  display: block;
+}
+
+.results-page .is-leader .crown-icon {
+  visibility: visible;
+}
+
+.results-page .result-card .avatar {
+  width: clamp(30px, min(42cqw, 16cqh), 88px);
+  height: clamp(30px, min(42cqw, 16cqh), 88px);
+  font-size: clamp(0.8rem, min(14cqw, 6cqh), 1.7rem);
+  border-width: 2px;
+  flex: 0 0 auto;
+}
+
+.results-page .result-card .candidate-name {
+  font-size: clamp(0.72rem, min(9cqw, 4.2cqh), 1.5rem);
+  line-height: 1.15;
+  margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.results-page .result-card .candidate-group {
+  font-size: clamp(0.62rem, min(7cqw, 3cqh), 1rem);
+  margin: 0;
+}
+
+.results-page .vote-number {
+  font-size: clamp(1.3rem, min(20cqw, 9cqh), 3.4rem);
+  line-height: 1;
+  margin-top: clamp(2px, 1cqh, 8px);
+}
+
+.results-page .vote-percentage {
+  font-size: clamp(0.65rem, min(8cqw, 3.2cqh), 1.1rem);
+}
+
+/* Тік прогресс-жолақ: қалған биіктікті алады, төменнен жоғары өседі */
+.results-page .progress-bg {
+  flex: 1 1 0;
+  min-height: 24px;
+  width: clamp(22px, 38cqw, 64px);
+  margin-top: clamp(4px, 1.5cqh, 10px);
+  display: flex;
+  align-items: flex-end;
+  border-radius: 8px;
+}
+
+.results-page .progress-fill {
+  width: 100%;
+  height: 0%;
+  border-radius: 8px;
+  transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Нөлдеу модалі */
+.results-page .modal-overlay {
+  overflow-y: auto;
+}
+
+/* =====================================================
+   results.html: акцент сурет пен аты-жөнінде,
+   дауыс саны мен пайыз ашық көрінеді
+   ===================================================== */
+.results-page .result-card .avatar {
+  width: clamp(44px, min(62cqw, 26cqh), 140px);
+  height: clamp(44px, min(62cqw, 26cqh), 140px);
+  font-size: clamp(1.1rem, min(20cqw, 9cqh), 2.6rem);
+  border-width: 4px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--candidate-color, #4f8cff) 18%, transparent),
+              0 6px 16px rgba(27, 38, 56, 0.12);
+}
+
+.results-page .result-card .candidate-name {
+  font-size: clamp(0.95rem, min(12cqw, 6cqh), 2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  padding-bottom: clamp(3px, 1cqh, 8px);
+  border-bottom: 3px solid var(--candidate-color, var(--accent-blue));
+}
+
+.results-page .result-card .candidate-group {
+  font-size: clamp(0.7rem, min(7.5cqw, 3.2cqh), 1.05rem);
+  color: var(--text-muted);
+}
+
+/* Дауыс саны мен пайыз: анық оқылады, бірақ суреттен басым емес */
+.results-page .vote-number {
+  font-size: clamp(1.4rem, min(16cqw, 7.5cqh), 2.6rem);
+  font-weight: 800;
+  margin-top: clamp(2px, 1cqh, 8px);
+}
+
+.results-page .vote-percentage {
+  font-size: clamp(0.78rem, min(8.5cqw, 3.6cqh), 1.2rem);
+  font-weight: 700;
+  color: var(--text-main);
+  background: color-mix(in srgb, var(--candidate-color, #4f8cff) 14%, #fff);
+  border: 1px solid color-mix(in srgb, var(--candidate-color, #4f8cff) 40%, #fff);
+  padding: 2px 12px;
+  border-radius: 999px;
+}
+
+.results-page .progress-bg {
+  width: clamp(18px, 26cqw, 48px);
+}
+
+/* =====================================================
+   results.html: төртбұрышты сурет + көлденең прогресс-жолақ
+   ===================================================== */
+.results-page .result-card {
+  max-width: 340px;
+}
+
+/* Сурет: карточка енін толық алады, қалған биіктікті иемденеді */
+.results-page .result-card .avatar {
+  width: 100%;
+  height: auto;
+  flex: 1 1 0;
+  min-height: 56px;
+  border-radius: 14px;
+  border-width: 3px;
+  font-size: clamp(1.6rem, min(34cqw, 16cqh), 4.5rem);
+  box-shadow: 0 6px 16px rgba(27, 38, 56, 0.12);
+}
+
+.results-page .result-card .avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Көлденең прогресс-жолақ */
+.results-page .progress-bg {
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 0;
+  height: clamp(8px, 3cqh, 18px);
+  margin-top: clamp(4px, 1.5cqh, 10px);
+  display: block;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.results-page .progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* =====================================================
+   results.html: карточка дизайны (үлкен төртбұрышты сурет,
+   аты-жөні, дауыс | пайыз, көлденең жолақ)
+   ===================================================== */
+.results-page .result-card {
+  max-width: 340px;
+  padding: clamp(8px, 2.2cqw, 14px);
+  gap: clamp(4px, 1.2cqh, 10px);
+  border-radius: 24px;
+  align-items: stretch;
+  position: relative;
+}
+
+/* Сурет: қалған биіктіктің басым бөлігін алады, толық төртбұрыш */
+.results-page .photo {
+  flex: 1 1 0;
+  min-height: 48px;
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--candidate-color, #4f8cff) 55%, #1b2638);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: clamp(1.4rem, min(30cqw, 14cqh), 4rem);
+  color: var(--candidate-color, var(--accent-blue));
+  background: color-mix(in srgb, var(--candidate-color, #4f8cff) 14%, #fff);
+}
+
+.results-page .photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Көш бастаушының тәжі: сурет бұрышында */
+.results-page .crown-icon {
+  position: absolute;
+  top: clamp(14px, 3cqh, 22px);
+  right: clamp(14px, 4cqw, 24px);
+  z-index: 2;
+  width: clamp(24px, 9cqw, 40px);
+  height: clamp(24px, 9cqw, 40px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(0.9rem, 5cqw, 1.5rem);
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(27, 38, 56, 0.25);
+  visibility: hidden;
+}
+
+.results-page .is-leader .crown-icon {
+  visibility: visible;
+}
+
+/* Аты-жөні: ортада, астында акцент сызығы */
+.results-page .result-card .candidate-name {
+  align-self: center;
+  width: 82%;
+  text-align: center;
+  font-size: clamp(0.95rem, min(8.5cqw, 4.2cqh), 1.8rem);
+  font-weight: 800;
+  padding-bottom: clamp(3px, 1cqh, 8px);
+  border-bottom: 2px solid var(--candidate-color, var(--accent-blue));
+}
+
+.results-page .result-card .candidate-group {
+  text-align: center;
+  font-size: clamp(0.68rem, min(6cqw, 2.8cqh), 0.95rem);
+  color: var(--text-muted);
+}
+
+/* Дауыс саны | пайыз */
+.results-page .stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 8px;
+}
+
+.results-page .vote-count {
+  font-size: clamp(0.85rem, min(7.5cqw, 3.6cqh), 1.45rem);
+  font-weight: 800;
+  color: var(--candidate-color, var(--accent-blue));
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.results-page .vote-count.pop {
+  animation: popAnim 0.3s ease-out;
+}
+
+.results-page .stats-divider {
+  width: 2px;
+  align-self: stretch;
+  min-height: 1.4em;
+  background: #4a5568;
+  border-radius: 1px;
+}
+
+.results-page .stats-row .vote-percentage {
+  font-size: clamp(0.8rem, min(7cqw, 3.4cqh), 1.3rem);
+  font-weight: 800;
+  white-space: nowrap;
+  padding: 2px 12px;
+}
+
+/* Көлденең прогресс-жолақ */
+.results-page .progress-bg {
+  flex: 0 0 auto;
+  width: 100%;
+  height: clamp(8px, 2.4cqh, 14px);
+  margin-top: 0;
+  display: block;
+  border-radius: 999px;
+  background: #dcdcdc;
+}
+
+.results-page .progress-fill {
+  width: 0%;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Тар бағандарда дауыс пен пайыз бірінің астына тұрады */
+@container (max-width: 170px) {
+  .stats-row {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .stats-divider {
+    display: none;
+  }
+}
+
+/* =====================================================
+   vote.html: дауыс беру парақшасы (карточка дизайны)
+   ===================================================== */
+.vote-page .container {
+  max-width: 1000px;
+}
+
+.vote-page .banner {
+  position: sticky;
+  top: calc(8px + var(--safe-top));
+  z-index: 50;
+  background: #e8f7ee;
+  box-shadow: var(--shadow);
+}
+
+/* Телефонда 1 баған, планшетте 2, компьютерде 3 */
+.vote-page .candidates-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap);
+}
+
+@media (min-width: 560px) {
+  .vote-page .candidates-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .vote-page .candidates-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.vote-page .candidate-card {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: clamp(10px, 3vw, 14px);
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.vote-page .candidate-card::before {
+  display: none;
+}
+
+/* Үлкен төртбұрышты сурет */
+.vote-page .photo {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--candidate-color, #4f8cff) 55%, #1b2638);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: clamp(2.2rem, 14vw, 4rem);
+  color: var(--candidate-color, var(--accent-blue));
+  background: color-mix(in srgb, var(--candidate-color, #4f8cff) 14%, #fff);
+}
+
+.vote-page .photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Аты-жөні: ортада, астында акцент сызығы */
+.vote-page .candidate-name {
+  align-self: center;
+  width: 86%;
+  text-align: center;
+  font-size: clamp(1.15rem, 5vw, 1.4rem);
+  font-weight: 800;
+  margin: 2px 0 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--candidate-color, var(--accent-blue));
+}
+
+.vote-page .candidate-group {
+  text-align: center;
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.vote-page .candidate-slogan {
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.vote-page .candidate-card .btn-vote {
+  width: 100%;
+  flex: 0 0 auto;
+  margin-top: auto; /* түймелер карточкалар қатарында бір деңгейде тұрады */
+  min-height: 48px;
+  border-radius: 14px;
+  font-size: 1.05rem;
+}

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Нәтижелер — Студенттік Парламент</title>
+  <link rel="stylesheet" href="styles.css?v=8">
+</head>
+<body class="results-page">
+  <div class="container">
+    <header>
+      <h1>📊 Сайлау Нәтижелері</h1>
+      <p class="subtitle" id="last-updated">Жаңартылды: --:--:--</p>
+      <div class="status-badge">
+        <span class="pulse-dot" id="status-dot"></span>
+        <span id="status-text">Жүйеге қосылуда...</span>
+      </div>
+    </header>
+
+    <div class="total-box">
+      <div class="total-title">Жалпы берілген дауыстар</div>
+      <div class="total-count" id="total-votes">0</div>
+      <button class="btn-secondary" id="btn-admin" style="font-size: 0.8rem; padding: 6px 12px; margin-top: 10px;">
+        ⚙️ Сайлауды қайта бастау
+      </button>
+    </div>
+
+    <main id="results-container"></main>
+  </div>
+
+  <!-- Әкімші модалі -->
+  <div class="modal-overlay" id="admin-modal">
+    <div class="modal">
+      <div class="modal-title">⚠️ Сайлауды қайта бастау</div>
+      <div class="modal-text">
+        Барлық дауыстар нөлделеді және жаңа сайлау басталады. Жалғастыру үшін құпиясөзді енгізіңіз:
+      </div>
+      <input type="password" id="admin-pass-input" class="admin-input" placeholder="Құпиясөз">
+      <div class="modal-actions">
+        <button class="btn-secondary" id="btn-admin-cancel">Бас тарту</button>
+        <button class="btn-danger" id="btn-admin-reset">Нөлдеу</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared.js"></script>
+
+  <script>
+    let candidatesMap = {};
+    let currentVotesState = {};
+    let prevCounts = {};
+
+    const resultsContainer = document.getElementById("results-container");
+    const totalVotesEl = document.getElementById("total-votes");
+    const lastUpdatedEl = document.getElementById("last-updated");
+    const statusDot = document.getElementById("status-dot");
+    const statusText = document.getElementById("status-text");
+
+    const adminModal = document.getElementById("admin-modal");
+    const btnAdmin = document.getElementById("btn-admin");
+    const btnAdminCancel = document.getElementById("btn-admin-cancel");
+    const btnAdminReset = document.getElementById("btn-admin-reset");
+    const adminPassInput = document.getElementById("admin-pass-input");
+
+    async function initBoard() {
+      try {
+        if (typeof supabaseClient === "undefined" || !supabaseClient) return;
+
+        const { data: cData } = await supabaseClient.from('candidates').select('*').order('created_at', { ascending: true });
+        const { data: vData } = await supabaseClient.from('votes').select('*');
+
+        candidatesMap = {};
+        if (cData) {
+          cData.forEach(c => { candidatesMap[c.id] = c; });
+        }
+
+        if (vData) {
+          vData.forEach(v => { currentVotesState[v.candidate_id] = v.count; });
+        }
+
+        statusDot.classList.remove("offline");
+        statusText.innerText = "Жүйе белсенді (Realtime)";
+        renderBoard();
+      } catch (err) {
+        console.error("initBoard қатесі:", err);
+        statusDot.classList.add("offline");
+        statusText.innerText = "⚠️ Қосылу ақауы";
+      }
+    }
+
+    function renderBoard() {
+      let total = 0;
+      let maxVotes = -1;
+
+      const candidatesArr = Object.values(candidatesMap);
+
+      candidatesArr.forEach(c => {
+        const count = currentVotesState[c.id] || 0;
+        total += count;
+        if (count > maxVotes && count > 0) maxVotes = count;
+      });
+
+      totalVotesEl.innerText = total;
+
+      if (candidatesArr.length === 0) {
+        resultsContainer.innerHTML = "<p style='text-align:center; color: var(--text-muted);'>Әлі ешқандай үміткер қосылмаған.</p>";
+        return;
+      }
+
+      resultsContainer.innerHTML = candidatesArr.map(c => {
+        const count = currentVotesState[c.id] || 0;
+        const percent = total > 0 ? ((count / total) * 100).toFixed(1) : "0.0";
+        const isLeader = (count === maxVotes && maxVotes > 0) ? 'is-leader' : '';
+        const needsPop = (prevCounts[c.id] !== undefined && count > prevCounts[c.id]) ? 'pop' : '';
+        prevCounts[c.id] = count;
+
+        const avatarContent = c.photo_url
+          ? `<img src="${escapeHTML(c.photo_url)}" alt="photo">`
+          : escapeHTML(c.initials);
+
+        return `
+          <div class="result-card ${isLeader}" style="--candidate-color: ${c.color}">
+            <span class="crown-icon">👑</span>
+            <div class="photo">${avatarContent}</div>
+            <div class="candidate-name">${escapeHTML(c.name)}</div>
+            <div class="candidate-group">${escapeHTML(c.group_name)}</div>
+            <div class="stats-row">
+              <span class="vote-count ${needsPop}">${count} дауыс</span>
+              <span class="stats-divider"></span>
+              <span class="vote-percentage">${percent}%</span>
+            </div>
+            <div class="progress-bg">
+              <div class="progress-fill" style="width: ${percent}%; background-color: ${c.color}"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const now = new Date();
+      lastUpdatedEl.innerText = `Жаңартылды: ${now.toTimeString().split(' ')[0]}`;
+    }
+
+    // Supabase Real-time жазылымдар
+    if (typeof supabaseClient !== "undefined" && supabaseClient) {
+      supabaseClient.channel('votes-channel')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'votes' }, payload => {
+          currentVotesState[payload.new.candidate_id] = payload.new.count;
+          renderBoard();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'candidates' }, () => {
+          initBoard();
+        })
+        .subscribe();
+    }
+
+    // Әкімші функциялары
+    btnAdmin.addEventListener("click", () => {
+      adminPassInput.value = "";
+      adminModal.classList.add("active");
+    });
+
+    btnAdminCancel.addEventListener("click", () => adminModal.classList.remove("active"));
+
+    btnAdminReset.addEventListener("click", async () => {
+      const inputPass = adminPassInput.value.trim();
+      const targetPass = (typeof ADMIN_PASS !== "undefined") ? ADMIN_PASS : "admin2024";
+
+      if (inputPass !== targetPass) {
+        return showToast("Құпиясөз қате!", "error");
+      }
+
+      btnAdminReset.disabled = true;
+      btnAdminReset.innerText = "Нөлделуде...";
+
+      try {
+        if (typeof supabaseClient === "undefined" || !supabaseClient) {
+          throw new Error("Supabase клиенті қосылмаған!");
+        }
+
+        const { data, error } = await supabaseClient.rpc('reset_election');
+        if (error) throw error;
+
+        adminModal.classList.remove("active");
+        showToast("Сайлау сәтті нөлденді!", "success");
+        setTimeout(initBoard, 500);
+      } catch (err) {
+        console.error("reset_election қатесі:", err);
+        const errMsg = err.message || JSON.stringify(err);
+        showToast("Қате: " + errMsg, "error");
+      } finally {
+        btnAdminReset.disabled = false;
+        btnAdminReset.innerText = "Нөлдеу";
+      }
+    });
+
+    initBoard();
+  </script>
+</body>
+</html>

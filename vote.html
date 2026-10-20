@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Дауыс беру — Студенттік Парламент</title>
+  <link rel="stylesheet" href="styles.css?v=8">
+</head>
+<body class="vote-page">
+  <div class="container">
+    <header>
+      <h1>🗳️ Президентті Сайлау</h1>
+      <p class="subtitle">Өз таңдауыңызды жасаңыз</p>
+      <div class="status-badge">
+        <span class="pulse-dot" id="status-dot"></span>
+        <span id="status-text">Үміткерлер жүктелуде...</span>
+      </div>
+    </header>
+
+    <div id="voted-banner" class="banner">
+      ✓ Сіздің дауысыңыз қабылданды! Алғыс білдіреміз.
+    </div>
+
+    <main id="candidates-container" class="candidates-grid"></main>
+  </div>
+
+  <!-- Дауыс беруді растау модалі -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal">
+      <div class="modal-title">Дауыс беруді растау</div>
+      <div class="modal-text" id="modal-text"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="btn-cancel">Бас тарту</button>
+        <button class="btn-vote" id="btn-confirm">Растаймын</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared.js"></script>
+
+  <script>
+    let selectedCandidateId = null;
+    let currentElectionId = null;
+    let candidatesList = [];
+
+    const deviceId = getDeviceId();
+    const statusDot = document.getElementById("status-dot");
+    const statusText = document.getElementById("status-text");
+    const votedBanner = document.getElementById("voted-banner");
+    const candidatesContainer = document.getElementById("candidates-container");
+    const confirmModal = document.getElementById("confirm-modal");
+    const modalText = document.getElementById("modal-text");
+    const btnCancel = document.getElementById("btn-cancel");
+    const btnConfirm = document.getElementById("btn-confirm");
+
+    // 1. Үміткерлерді базадан жүктеу
+    async function fetchCandidates() {
+      try {
+        if (typeof supabaseClient === "undefined" || !supabaseClient) {
+          statusDot.classList.add("offline");
+          statusText.innerText = "⚠️ shared.js жүктелмеді";
+          return;
+        }
+
+        const { data, error } = await supabaseClient
+          .from('candidates')
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        candidatesList = data || [];
+        renderCandidates();
+        checkVoterStatus();
+      } catch (err) {
+        console.error("fetchCandidates қатесі:", err);
+        statusDot.classList.add("offline");
+        statusText.innerText = "⚠️ Базамен байланыс жоқ";
+      }
+    }
+
+    // 2. Карточкаларды экранға шығару
+    function renderCandidates() {
+      if (candidatesList.length === 0) {
+        candidatesContainer.innerHTML = "<p style='text-align:center; color: var(--text-muted); padding: 20px;'>Әлі ешқандай үміткер тіркелмеген.</p>";
+        return;
+      }
+
+      candidatesContainer.innerHTML = candidatesList.map(c => {
+        const avatarContent = c.photo_url
+          ? `<img src="${escapeHTML(c.photo_url)}" alt="photo">`
+          : escapeHTML(c.initials);
+
+        return `
+          <div class="candidate-card" style="--candidate-color: ${c.color}">
+            <div class="photo">${avatarContent}</div>
+            <div class="candidate-name">${escapeHTML(c.name)}</div>
+            <div class="candidate-group">${escapeHTML(c.group_name)}</div>
+            ${c.slogan ? `<div class="candidate-slogan">"${escapeHTML(c.slogan)}"</div>` : ''}
+            <button class="btn-vote" data-id="${c.id}" data-name="${escapeHTML(c.name)}">Дауыс беру</button>
+          </div>
+        `;
+      }).join('');
+
+      document.querySelectorAll(".btn-vote[data-id]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          selectedCandidateId = btn.getAttribute("data-id");
+          const name = btn.getAttribute("data-name");
+          modalText.innerHTML = `Сіз <strong>${escapeHTML(name)}</strong> үшін дауыс бересіз. Бұл әрекетті кейін өзгерту мүмкін болмайды.`;
+          confirmModal.classList.add("active");
+        });
+      });
+    }
+
+    // 3. Дауыс беру мәртебесін тексеру
+    async function checkVoterStatus() {
+      try {
+        if (!supabaseClient) return;
+
+        const { data: config } = await supabaseClient.from('config').select('election_id').eq('id', 1).single();
+        if (!config) return;
+        currentElectionId = config.election_id;
+
+        const { data: voter } = await supabaseClient.from('voters').select('election_id').eq('device_id', deviceId).single();
+
+        statusDot.classList.remove("offline");
+        statusText.innerText = "Жүйе белсенді";
+
+        if (voter && voter.election_id === currentElectionId) {
+          votedBanner.style.display = "block";
+          disableAllButtons(true);
+        } else {
+          votedBanner.style.display = "none";
+          disableAllButtons(false);
+        }
+      } catch (err) {
+        console.error("checkVoterStatus қатесі:", err);
+        statusDot.classList.add("offline");
+        statusText.innerText = "⚠️ Қосылу ақауы";
+      }
+    }
+
+    function disableAllButtons(disable) {
+      document.querySelectorAll(".btn-vote[data-id]").forEach(btn => {
+        btn.disabled = disable;
+        btn.innerText = disable ? "Дауыс берілді" : "Дауыс беру";
+      });
+    }
+
+    btnCancel.addEventListener("click", () => {
+      confirmModal.classList.remove("active");
+      selectedCandidateId = null;
+    });
+
+    btnConfirm.addEventListener("click", async () => {
+      confirmModal.classList.remove("active");
+      if (!selectedCandidateId) return;
+
+      btnConfirm.disabled = true;
+
+      try {
+        const { data, error } = await supabaseClient.rpc('cast_vote', {
+          v_device_id: deviceId,
+          v_candidate_id: selectedCandidateId
+        });
+
+        if (error) throw error;
+
+        if (data === 'ALREADY_VOTED') {
+          showToast("Сіз бұл сайлауда дауыс беріп қойғансыз!", "error");
+          disableAllButtons(true);
+        } else if (data === 'SUCCESS') {
+          showToast("Дауысыңыз сәтті қабылданды!", "success");
+          votedBanner.style.display = "block";
+          disableAllButtons(true);
+        }
+      } catch (err) {
+        console.error("cast_vote қатесі:", err);
+        showToast("Қате орын алды. Қайталап көріңіз.", "error");
+      } finally {
+        btnConfirm.disabled = false;
+      }
+    });
+
+    // Жаңа сайлау басталғанда экранды автоматты жаңарту
+    if (typeof supabaseClient !== "undefined" && supabaseClient) {
+      supabaseClient.channel('config-updates')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'config' }, () => {
+          checkVoterStatus();
+        }).subscribe();
+    }
+
+    fetchCandidates();
+  </script>
+</body>
+</html>
