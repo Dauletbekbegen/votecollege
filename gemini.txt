@@ -1,0 +1,69 @@
+create or replace function public.cast_vote(v_device_id text, v_candidate_id uuid)
+returns text language plpgsql security definer as $$
+declare
+  curr_election int;
+  voter_record int;
+begin
+  -- 1. Ағымдағы сайлау нөмірін алу
+  select election_id into curr_election from public.config where id = 1;
+
+  -- 2. Осы құрылғының осы сайлауда дауыс бергенін қатал тексеру
+  select election_id into voter_record from public.voters where device_id = v_device_id;
+  
+  if voter_record is not null and voter_record = curr_election then
+    return 'ALREADY_VOTED';
+  end if;
+
+  -- 3. Алдымен voters кестесіне тіркеу
+  insert into public.voters (device_id, election_id)
+  values (v_device_id, curr_election)
+  on conflict (device_id) do update set election_id = curr_election;
+
+  -- 4. Тек тіркеу сәтті өткен соң ғана дауысты +1 өсіру
+  update public.votes set count = count + 1 where candidate_id = v_candidate_id;
+
+  return 'SUCCESS';
+end;
+$$;
+
+
+
+btnConfirm.addEventListener("click", async () => {
+  if (!selectedCandidateId) return;
+
+  // 1. Екі рет басылып кетпеуі үшін батырманы бірден ЛЕЗДЕ бұғаттау
+  btnConfirm.disabled = true;
+  confirmModal.classList.remove("active");
+
+  // 2. Телефонның жергілікті жадынан тексеру
+  const votedKey = "voted_in_election_" + currentElectionId;
+  if (localStorage.getItem(votedKey) === "true") {
+    showToast("Сіз бұл сайлауда дауыс беріп қойғансыз!", "error");
+    disableAllButtons(true);
+    return;
+  }
+
+  try {
+    const { data, error } = await supabaseClient.rpc('cast_vote', {
+      v_device_id: deviceId,
+      v_candidate_id: selectedCandidateId
+    });
+
+    if (error) throw error;
+
+    if (data === 'ALREADY_VOTED') {
+      localStorage.setItem(votedKey, "true");
+      showToast("Сіз бұл сайлауда дауыс беріп қойғансыз!", "error");
+      disableAllButtons(true);
+    } else if (data === 'SUCCESS') {
+      localStorage.setItem(votedKey, "true");
+      showToast("Дауысыңыз сәтті қабылданды!", "success");
+      votedBanner.style.display = "block";
+      disableAllButtons(true);
+    }
+  } catch (err) {
+    console.error("cast_vote қатесі:", err);
+    showToast("Қате орын алды. Қайталап көріңіз.", "error");
+    btnConfirm.disabled = false; // Қате шықса ғана қайта ашу
+  }
+});
