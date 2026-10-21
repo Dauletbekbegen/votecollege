@@ -153,35 +153,45 @@
       selectedCandidateId = null;
     });
 
-    btnConfirm.addEventListener("click", async () => {
-      confirmModal.classList.remove("active");
-      if (!selectedCandidateId) return;
+ btnConfirm.addEventListener("click", async () => {
+  if (!selectedCandidateId) return;
 
-      btnConfirm.disabled = true;
+  // 1. Екі рет басылып кетпеуі үшін батырманы бірден ЛЕЗДЕ бұғаттау
+  btnConfirm.disabled = true;
+  confirmModal.classList.remove("active");
 
-      try {
-        const { data, error } = await supabaseClient.rpc('cast_vote', {
-          v_device_id: deviceId,
-          v_candidate_id: selectedCandidateId
-        });
+  // 2. Телефонның жергілікті жадынан тексеру
+  const votedKey = "voted_in_election_" + currentElectionId;
+  if (localStorage.getItem(votedKey) === "true") {
+    showToast("Сіз бұл сайлауда дауыс беріп қойғансыз!", "error");
+    disableAllButtons(true);
+    return;
+  }
 
-        if (error) throw error;
-
-        if (data === 'ALREADY_VOTED') {
-          showToast("Сіз бұл сайлауда дауыс беріп қойғансыз!", "error");
-          disableAllButtons(true);
-        } else if (data === 'SUCCESS') {
-          showToast("Дауысыңыз сәтті қабылданды!", "success");
-          votedBanner.style.display = "block";
-          disableAllButtons(true);
-        }
-      } catch (err) {
-        console.error("cast_vote қатесі:", err);
-        showToast("Қате орын алды. Қайталап көріңіз.", "error");
-      } finally {
-        btnConfirm.disabled = false;
-      }
+  try {
+    const { data, error } = await supabaseClient.rpc('cast_vote', {
+      v_device_id: deviceId,
+      v_candidate_id: selectedCandidateId
     });
+
+    if (error) throw error;
+
+    if (data === 'ALREADY_VOTED') {
+      localStorage.setItem(votedKey, "true");
+      showToast("Сіз бұл сайлауда дауыс беріп қойғансыз!", "error");
+      disableAllButtons(true);
+    } else if (data === 'SUCCESS') {
+      localStorage.setItem(votedKey, "true");
+      showToast("Дауысыңыз сәтті қабылданды!", "success");
+      votedBanner.style.display = "block";
+      disableAllButtons(true);
+    }
+  } catch (err) {
+    console.error("cast_vote қатесі:", err);
+    showToast("Қате орын алды. Қайталап көріңіз.", "error");
+    btnConfirm.disabled = false; // Қате шықса ғана қайта ашу
+  }
+});
 
     // Жаңа сайлау басталғанда экранды автоматты жаңарту
     if (typeof supabaseClient !== "undefined" && supabaseClient) {
