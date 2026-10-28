@@ -16,7 +16,17 @@
         <span id="status-text">Жүйеге қосылуда...</span>
       </div>
     </header>
-
+<!-- QR Код блогы -->
+<div style="text-align: center; margin-top: 15px; margin-bottom: 10px;">
+  <div style="display: inline-block; background: white; padding: 8px; border-radius: 12px; border: 2px solid var(--card-border); box-shadow: var(--shadow);">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://dauletbekbegen.github.io/votecollege/vote.html" 
+         alt="Дауыс беру QR коды" 
+         style="width: 120px; height: 120px; display: block;">
+  </div>
+  <p style="font-size: 0.9rem; font-weight: 700; color: var(--text-main); margin-top: 8px;">
+    Дауыс беру үшін сканерлеңіз
+  </p>
+</div>
     <div class="total-box">
       <div class="total-title">Жалпы берілген дауыстар</div>
       <div class="total-count" id="total-votes">0</div>
