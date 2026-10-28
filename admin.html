@@ -57,19 +57,20 @@
   <script src="shared.js"></script>
 
   <script>
-    document.getElementById("btn-login").addEventListener("click", () => {
-      const pass = document.getElementById("admin-pass").value.trim();
-      const targetPass = (typeof ADMIN_PASS !== "undefined") ? ADMIN_PASS : "admin2024";
+  document.getElementById("btn-login").addEventListener("click", () => {
+  const pass = document.getElementById("admin-pass").value.trim();
+  const targetPass = (typeof ADMIN_PASS !== "undefined") ? ADMIN_PASS : "orda2026";
 
-      if (pass === targetPass) {
-        document.getElementById("login-section").style.display = "none";
-        document.getElementById("admin-section").style.display = "block";
-        if (typeof showToast === "function") showToast("Рұқсат берілді!", "success");
-      } else {
-        if (typeof showToast === "function") showToast("Құпиясөз қате!", "error");
-        else alert("Құпиясөз қате!");
-      }
-    });
+  if (pass === targetPass) {
+    document.getElementById("login-section").style.display = "none";
+    document.getElementById("admin-section").style.display = "block";
+    if (typeof showToast === "function") showToast("Рұқсат берілді!", "success");
+    loadAdminCandidates(); // <--- ОСЫ ЖОЛДЫ ҚОСЫҢЫЗ
+  } else {
+    if (typeof showToast === "function") showToast("Құпиясөз қате!", "error");
+    else alert("Құпиясөз қате!");
+  }
+});
 
     document.getElementById("admin-pass").addEventListener("keypress", (e) => {
       if (e.key === "Enter") document.getElementById("btn-login").click();
