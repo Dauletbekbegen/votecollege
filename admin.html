@@ -27,7 +27,7 @@
           <label style="font-size: 0.9rem; color: var(--text-muted);">Үміткердің аты-жөні:</label>
           <input type="text" id="c-name" class="admin-input" placeholder="Мысалы: Айдар Нұрланов">
 
-          <label style="font-size: 0.9rem; color: var(--text-muted);">Тобы:</label>
+          <label style="font-size: 0.9rem; color: var(--text-muted);">Тобы (міндетті емес):</label>
           <input type="text" id="c-group" class="admin-input" placeholder="Мысалы: ИТ-21">
 
           <label style="font-size: 0.9rem; color: var(--text-muted);">Ұраны:</label>
@@ -67,7 +67,7 @@
         document.getElementById("login-section").style.display = "none";
         document.getElementById("admin-section").style.display = "block";
         if (typeof showToast === "function") showToast("Рұқсат берілді!", "success");
-        loadAdminCandidates(); // Жүйеге кіргенде тізімді жүктеу
+        loadAdminCandidates();
       } else {
         if (typeof showToast === "function") showToast("Құпиясөз қате!", "error");
         else alert("Құпиясөз қате!");
@@ -85,9 +85,9 @@
       const photo = document.getElementById("c-photo").value.trim();
       const color = document.getElementById("c-color").value;
 
-      if (!name || !group) {
-        if (typeof showToast === "function") showToast("Аты-жөні мен тобын толтыру міндетті!", "error");
-        else alert("Аты-жөні мен тобын толтыру міндетті!");
+      if (!name) {
+        if (typeof showToast === "function") showToast("Үміткердің аты-жөнін толтыру міндетті!", "error");
+        else alert("Үміткердің аты-жөнін толтыру міндетті!");
         return;
       }
 
@@ -106,7 +106,7 @@
       try {
         const { data, error } = await supabaseClient.from('candidates').insert([{
           name: name,
-          group_name: group,
+          group_name: group || null,
           slogan: slogan || null,
           photo_url: photo || null,
           color: color,
@@ -118,13 +118,11 @@
         if (typeof showToast === "function") showToast("Үміткер сәтті қосылды!", "success");
         else alert("Үміткер сәтті қосылды!");
 
-        // Форманы тазарту
         document.getElementById("c-name").value = "";
         document.getElementById("c-group").value = "";
         document.getElementById("c-slogan").value = "";
         document.getElementById("c-photo").value = "";
         
-        // Жаңа үміткер қосылған соң тізімді жаңарту
         loadAdminCandidates();
 
       } catch (err) {
@@ -138,7 +136,6 @@
       }
     });
 
-    // Үміткерлер тізімін жүктеу
     async function loadAdminCandidates() {
       const listContainer = document.getElementById("admin-candidates-list");
       listContainer.innerHTML = "<span style='color: var(--text-muted);'>Жүктелуде...</span>";
@@ -156,7 +153,7 @@
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f7f9fc; border: 1px solid var(--card-border); border-radius: 8px;">
             <div>
               <strong>${escapeHTML(c.name)}</strong> 
-              <span style="font-size: 0.85rem; color: var(--text-muted); display: block;">${escapeHTML(c.group_name)}</span>
+              ${c.group_name ? `<span style="font-size: 0.85rem; color: var(--text-muted); display: block;">${escapeHTML(c.group_name)}</span>` : ''}
             </div>
             <button onclick="deleteCandidate('${c.id}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">Өшіру</button>
           </div>
@@ -167,7 +164,6 @@
       }
     }
 
-    // Үміткерді өшіру
     window.deleteCandidate = async function(id) {
       if (!confirm("Бұл үміткерді өшіруге сенімдісіз бе? Оның дауыстары да жойылуы мүмкін.")) return;
 
@@ -178,7 +174,7 @@
         if (typeof showToast === "function") showToast("Үміткер сәтті өшірілді!", "success");
         else alert("Үміткер сәтті өшірілді!");
         
-        loadAdminCandidates(); // Тізімді жаңарту
+        loadAdminCandidates();
       } catch (err) {
         console.error("Өшіру қатесі:", err);
         if (typeof showToast === "function") showToast("Қате: " + err.message, "error");
