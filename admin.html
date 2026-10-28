@@ -130,6 +130,53 @@
         btn.innerText = "➕ Базаға тіркеу";
       }
     });
+    // Үміткерлер тізімін жүктеу
+async function loadAdminCandidates() {
+  const listContainer = document.getElementById("admin-candidates-list");
+  listContainer.innerHTML = "<span style='color: var(--text-muted);'>Жүктелуде...</span>";
+
+  try {
+    const { data, error } = await supabaseClient.from('candidates').select('*').order('created_at', { ascending: true });
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      listContainer.innerHTML = "<span style='color: var(--text-muted);'>Үміткерлер табылмады.</span>";
+      return;
+    }
+
+    listContainer.innerHTML = data.map(c => `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f7f9fc; border: 1px solid var(--card-border); border-radius: 8px;">
+        <div>
+          <strong>${escapeHTML(c.name)}</strong> 
+          <span style="font-size: 0.85rem; color: var(--text-muted); display: block;">${escapeHTML(c.group_name)}</span>
+        </div>
+        <button onclick="deleteCandidate('${c.id}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">Өшіру</button>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error("Жүктеу қатесі:", err);
+    listContainer.innerHTML = "<span style='color: var(--red);'>Қате орын алды.</span>";
+  }
+}
+
+// Үміткерді өшіру
+window.deleteCandidate = async function(id) {
+  if (!confirm("Бұл үміткерді өшіруге сенімдісіз бе? Оның дауыстары да жойылуы мүмкін.")) return;
+
+  try {
+    const { error } = await supabaseClient.from('candidates').delete().eq('id', id);
+    if (error) throw error;
+
+    if (typeof showToast === "function") showToast("Үміткер сәтті өшірілді!", "success");
+    else alert("Үміткер сәтті өшірілді!");
+    
+    loadAdminCandidates(); // Тізімді жаңарту
+  } catch (err) {
+    console.error("Өшіру қатесі:", err);
+    if (typeof showToast === "function") showToast("Қате: " + err.message, "error");
+    else alert("Қате: " + err.message);
+  }
+};
   </script>
 </body>
 </html>
