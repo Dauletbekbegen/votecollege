@@ -10,7 +10,7 @@
   <div class="container" style="max-width: 500px;">
     <header>
       <h1>⚙️ Әкімші Панелі</h1>
-      <p class="subtitle">Үміткерлерді базаға тіркеу</p>
+      <p class="subtitle">Үміткерлерді базаға тіркеу және басқару</p>
     </header>
 
     <!-- Құпиясөз енгізу блогы -->
@@ -41,14 +41,16 @@
 
           <button class="btn-vote" id="btn-add-candidate" style="margin-top: 10px; background: var(--green);">➕ Базаға тіркеу</button>
         </div>
-        <!-- Үміткерлерді басқару (Өшіру) блогы -->
-<div class="total-box" style="margin-top: 20px;">
-  <h2 style="margin-bottom: 15px; text-align: left; font-size: 1.2rem;">Үміткерлерді басқару</h2>
-  <div id="admin-candidates-list" style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
-    <!-- Тізім осы жерге жүктеледі -->
-  </div>
-</div>
       </div>
+
+      <!-- Үміткерлерді басқару (Өшіру) блогы -->
+      <div class="total-box" style="margin-top: 20px;">
+        <h2 style="margin-bottom: 15px; text-align: left; font-size: 1.2rem;">Үміткерлерді басқару</h2>
+        <div id="admin-candidates-list" style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
+          <!-- Тізім осы жерге жүктеледі -->
+        </div>
+      </div>
+
       <a href="index.html" class="btn-secondary" style="display: block; text-align: center; text-decoration: none; margin-top: 15px;">⬅ Басты бетке қайту</a>
     </main>
   </div>
@@ -57,20 +59,20 @@
   <script src="shared.js"></script>
 
   <script>
-  document.getElementById("btn-login").addEventListener("click", () => {
-  const pass = document.getElementById("admin-pass").value.trim();
-  const targetPass = (typeof ADMIN_PASS !== "undefined") ? ADMIN_PASS : "orda2026";
+    document.getElementById("btn-login").addEventListener("click", () => {
+      const pass = document.getElementById("admin-pass").value.trim();
+      const targetPass = (typeof ADMIN_PASS !== "undefined") ? ADMIN_PASS : "orda2026";
 
-  if (pass === targetPass) {
-    document.getElementById("login-section").style.display = "none";
-    document.getElementById("admin-section").style.display = "block";
-    if (typeof showToast === "function") showToast("Рұқсат берілді!", "success");
-    loadAdminCandidates(); // <--- ОСЫ ЖОЛДЫ ҚОСЫҢЫЗ
-  } else {
-    if (typeof showToast === "function") showToast("Құпиясөз қате!", "error");
-    else alert("Құпиясөз қате!");
-  }
-});
+      if (pass === targetPass) {
+        document.getElementById("login-section").style.display = "none";
+        document.getElementById("admin-section").style.display = "block";
+        if (typeof showToast === "function") showToast("Рұқсат берілді!", "success");
+        loadAdminCandidates(); // Жүйеге кіргенде тізімді жүктеу
+      } else {
+        if (typeof showToast === "function") showToast("Құпиясөз қате!", "error");
+        else alert("Құпиясөз қате!");
+      }
+    });
 
     document.getElementById("admin-pass").addEventListener("keypress", (e) => {
       if (e.key === "Enter") document.getElementById("btn-login").click();
@@ -116,10 +118,15 @@
         if (typeof showToast === "function") showToast("Үміткер сәтті қосылды!", "success");
         else alert("Үміткер сәтті қосылды!");
 
+        // Форманы тазарту
         document.getElementById("c-name").value = "";
         document.getElementById("c-group").value = "";
         document.getElementById("c-slogan").value = "";
         document.getElementById("c-photo").value = "";
+        
+        // Жаңа үміткер қосылған соң тізімді жаңарту
+        loadAdminCandidates();
+
       } catch (err) {
         console.error("Supabase қатесі:", err);
         const errMsg = err.message || JSON.stringify(err);
@@ -130,53 +137,243 @@
         btn.innerText = "➕ Базаға тіркеу";
       }
     });
+
     // Үміткерлер тізімін жүктеу
-async function loadAdminCandidates() {
-  const listContainer = document.getElementById("admin-candidates-list");
-  listContainer.innerHTML = "<span style='color: var(--text-muted);'>Жүктелуде...</span>";
+    async function loadAdminCandidates() {
+      const listContainer = document.getElementById("admin-candidates-list");
+      listContainer.innerHTML = "<span style='color: var(--text-muted);'>Жүктелуде...</span>";
 
-  try {
-    const { data, error } = await supabaseClient.from('candidates').select('*').order('created_at', { ascending: true });
-    if (error) throw error;
+      try {
+        const { data, error } = await supabaseClient.from('candidates').select('*').order('created_at', { ascending: true });
+        if (error) throw error;
 
-    if (!data || data.length === 0) {
-      listContainer.innerHTML = "<span style='color: var(--text-muted);'>Үміткерлер табылмады.</span>";
-      return;
+        if (!data || data.length === 0) {
+          listContainer.innerHTML = "<span style='color: var(--text-muted);'>Үміткерлер табылмады.</span>";
+          return;
+        }
+
+        listContainer.innerHTML = data.map(c => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f7f9fc; border: 1px solid var(--card-border); border-radius: 8px;">
+            <div>
+              <strong>${escapeHTML(c.name)}</strong> 
+              <span style="font-size: 0.85rem; color: var(--text-muted); display: block;">${escapeHTML(c.group_name)}</span>
+            </div>
+            <button onclick="deleteCandidate('${c.id}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">Өшіру</button>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error("Жүктеу қатесі:", err);
+        listContainer.innerHTML = "<span style='color: var(--red);'>Қате орын алды.</span>";
+      }
     }
 
-    listContainer.innerHTML = data.map(c => `
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f7f9fc; border: 1px solid var(--card-border); border-radius: 8px;">
-        <div>
-          <strong>${escapeHTML(c.name)}</strong> 
-          <span style="font-size: 0.85rem; color: var(--text-muted); display: block;">${escapeHTML(c.group_name)}</span>
+    // Үміткерді өшіру
+    window.deleteCandidate = async function(id) {
+      if (!confirm("Бұл үміткерді өшіруге сенімдісіз бе? Оның дауыстары да жойылуы мүмкін.")) return;
+
+      try {
+        const { error } = await supabaseClient.from('candidates').delete().eq('id', id);
+        if (error) throw error;
+
+        if (typeof showToast === "function") showToast("Үміткер сәтті өшірілді!", "success");
+        else alert("Үміткер сәтті өшірілді!");
+        
+        loadAdminCandidates(); // Тізімді жаңарту
+      } catch (err) {
+        console.error("Өшіру қатесі:", err);
+        if (typeof showToast === "function") showToast("Қате: " + err.message, "error");
+        else alert("Қате: " + err.message);
+      }
+    };
+  </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Әкімші Панелі — Үміткер қосу</title>
+  <link rel="stylesheet" href="styles.css?v=8">
+</head>
+<body>
+  <div class="container" style="max-width: 500px;">
+    <header>
+      <h1>⚙️ Әкімші Панелі</h1>
+      <p class="subtitle">Үміткерлерді базаға тіркеу және басқару</p>
+    </header>
+
+    <!-- Құпиясөз енгізу блогы -->
+    <div id="login-section" class="total-box">
+      <input type="password" id="admin-pass" class="admin-input" placeholder="Әкімші құпиясөзін енгізіңіз">
+      <button class="btn-vote" id="btn-login" style="width: 100%;">Кіру</button>
+    </div>
+
+    <!-- Үміткер қосу формасы -->
+    <main id="admin-section" style="display: none;">
+      <div class="total-box">
+        <h2 style="margin-bottom: 20px; text-align: left; font-size: 1.2rem;">Жаңа Үміткер Қосу</h2>
+        <div style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
+          <label style="font-size: 0.9rem; color: var(--text-muted);">Үміткердің аты-жөні:</label>
+          <input type="text" id="c-name" class="admin-input" placeholder="Мысалы: Айдар Нұрланов">
+
+          <label style="font-size: 0.9rem; color: var(--text-muted);">Тобы:</label>
+          <input type="text" id="c-group" class="admin-input" placeholder="Мысалы: ИТ-21">
+
+          <label style="font-size: 0.9rem; color: var(--text-muted);">Ұраны:</label>
+          <input type="text" id="c-slogan" class="admin-input" placeholder="Мысалы: Білім мен технология — болашақ кепілі">
+
+          <label style="font-size: 0.9rem; color: var(--text-muted);">Сурет сілтемесі (URL - міндетті емес):</label>
+          <input type="text" id="c-photo" class="admin-input" placeholder="https://... (Интернеттегі сурет сілтемесі)">
+
+          <label style="font-size: 0.9rem; color: var(--text-muted);">Түсі (Карточка жиегі үшін):</label>
+          <input type="color" id="c-color" value="#4f8cff" style="width: 100%; height: 40px; border: none; background: transparent; cursor: pointer;">
+
+          <button class="btn-vote" id="btn-add-candidate" style="margin-top: 10px; background: var(--green);">➕ Базаға тіркеу</button>
         </div>
-        <button onclick="deleteCandidate('${c.id}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">Өшіру</button>
       </div>
-    `).join('');
-  } catch (err) {
-    console.error("Жүктеу қатесі:", err);
-    listContainer.innerHTML = "<span style='color: var(--red);'>Қате орын алды.</span>";
-  }
-}
 
-// Үміткерді өшіру
-window.deleteCandidate = async function(id) {
-  if (!confirm("Бұл үміткерді өшіруге сенімдісіз бе? Оның дауыстары да жойылуы мүмкін.")) return;
+      <!-- Үміткерлерді басқару (Өшіру) блогы -->
+      <div class="total-box" style="margin-top: 20px;">
+        <h2 style="margin-bottom: 15px; text-align: left; font-size: 1.2rem;">Үміткерлерді басқару</h2>
+        <div id="admin-candidates-list" style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
+          <!-- Тізім осы жерге жүктеледі -->
+        </div>
+      </div>
 
-  try {
-    const { error } = await supabaseClient.from('candidates').delete().eq('id', id);
-    if (error) throw error;
+      <a href="index.html" class="btn-secondary" style="display: block; text-align: center; text-decoration: none; margin-top: 15px;">⬅ Басты бетке қайту</a>
+    </main>
+  </div>
 
-    if (typeof showToast === "function") showToast("Үміткер сәтті өшірілді!", "success");
-    else alert("Үміткер сәтті өшірілді!");
-    
-    loadAdminCandidates(); // Тізімді жаңарту
-  } catch (err) {
-    console.error("Өшіру қатесі:", err);
-    if (typeof showToast === "function") showToast("Қате: " + err.message, "error");
-    else alert("Қате: " + err.message);
-  }
-};
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared.js"></script>
+
+  <script>
+    document.getElementById("btn-login").addEventListener("click", () => {
+      const pass = document.getElementById("admin-pass").value.trim();
+      const targetPass = (typeof ADMIN_PASS !== "undefined") ? ADMIN_PASS : "orda2026";
+
+      if (pass === targetPass) {
+        document.getElementById("login-section").style.display = "none";
+        document.getElementById("admin-section").style.display = "block";
+        if (typeof showToast === "function") showToast("Рұқсат берілді!", "success");
+        loadAdminCandidates(); // Жүйеге кіргенде тізімді жүктеу
+      } else {
+        if (typeof showToast === "function") showToast("Құпиясөз қате!", "error");
+        else alert("Құпиясөз қате!");
+      }
+    });
+
+    document.getElementById("admin-pass").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") document.getElementById("btn-login").click();
+    });
+
+    document.getElementById("btn-add-candidate").addEventListener("click", async () => {
+      const name = document.getElementById("c-name").value.trim();
+      const group = document.getElementById("c-group").value.trim();
+      const slogan = document.getElementById("c-slogan").value.trim();
+      const photo = document.getElementById("c-photo").value.trim();
+      const color = document.getElementById("c-color").value;
+
+      if (!name || !group) {
+        if (typeof showToast === "function") showToast("Аты-жөні мен тобын толтыру міндетті!", "error");
+        else alert("Аты-жөні мен тобын толтыру міндетті!");
+        return;
+      }
+
+      if (typeof supabaseClient === "undefined" || !supabaseClient) {
+        alert("Қате: Supabase клиенті қосылмаған! shared.js файлын тексеріңіз.");
+        return;
+      }
+
+      const words = name.split(" ");
+      const initials = words.length > 1 ? words[0][0] + words[1][0] : name.substring(0, 2);
+
+      const btn = document.getElementById("btn-add-candidate");
+      btn.disabled = true;
+      btn.innerText = "Жіберілуде...";
+
+      try {
+        const { data, error } = await supabaseClient.from('candidates').insert([{
+          name: name,
+          group_name: group,
+          slogan: slogan || null,
+          photo_url: photo || null,
+          color: color,
+          initials: initials.toUpperCase()
+        }]);
+
+        if (error) throw error;
+
+        if (typeof showToast === "function") showToast("Үміткер сәтті қосылды!", "success");
+        else alert("Үміткер сәтті қосылды!");
+
+        // Форманы тазарту
+        document.getElementById("c-name").value = "";
+        document.getElementById("c-group").value = "";
+        document.getElementById("c-slogan").value = "";
+        document.getElementById("c-photo").value = "";
+        
+        // Жаңа үміткер қосылған соң тізімді жаңарту
+        loadAdminCandidates();
+
+      } catch (err) {
+        console.error("Supabase қатесі:", err);
+        const errMsg = err.message || JSON.stringify(err);
+        if (typeof showToast === "function") showToast("Қате: " + errMsg, "error");
+        else alert("Қате: " + errMsg);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "➕ Базаға тіркеу";
+      }
+    });
+
+    // Үміткерлер тізімін жүктеу
+    async function loadAdminCandidates() {
+      const listContainer = document.getElementById("admin-candidates-list");
+      listContainer.innerHTML = "<span style='color: var(--text-muted);'>Жүктелуде...</span>";
+
+      try {
+        const { data, error } = await supabaseClient.from('candidates').select('*').order('created_at', { ascending: true });
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          listContainer.innerHTML = "<span style='color: var(--text-muted);'>Үміткерлер табылмады.</span>";
+          return;
+        }
+
+        listContainer.innerHTML = data.map(c => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f7f9fc; border: 1px solid var(--card-border); border-radius: 8px;">
+            <div>
+              <strong>${escapeHTML(c.name)}</strong> 
+              <span style="font-size: 0.85rem; color: var(--text-muted); display: block;">${escapeHTML(c.group_name)}</span>
+            </div>
+            <button onclick="deleteCandidate('${c.id}')" style="background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">Өшіру</button>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error("Жүктеу қатесі:", err);
+        listContainer.innerHTML = "<span style='color: var(--red);'>Қате орын алды.</span>";
+      }
+    }
+
+    // Үміткерді өшіру
+    window.deleteCandidate = async function(id) {
+      if (!confirm("Бұл үміткерді өшіруге сенімдісіз бе? Оның дауыстары да жойылуы мүмкін.")) return;
+
+      try {
+        const { error } = await supabaseClient.from('candidates').delete().eq('id', id);
+        if (error) throw error;
+
+        if (typeof showToast === "function") showToast("Үміткер сәтті өшірілді!", "success");
+        else alert("Үміткер сәтті өшірілді!");
+        
+        loadAdminCandidates(); // Тізімді жаңарту
+      } catch (err) {
+        console.error("Өшіру қатесі:", err);
+        if (typeof showToast === "function") showToast("Қате: " + err.message, "error");
+        else alert("Қате: " + err.message);
+      }
+    };
   </script>
 </body>
 </html>
